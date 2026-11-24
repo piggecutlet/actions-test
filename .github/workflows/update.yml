@@ -1,0 +1,35 @@
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - run: curl -s https://api.ipify.org
+
+      - run: |
+          git clone https://codeberg.org/piggecutlet/bcedd.git "$RUNNER_TEMP/bcedd"
+          pip install "$RUNNER_TEMP/bcedd"
+
+      - run: python -m bcedd -c jp kr en tw -o .
+
+      - env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          echo "$SSH_PRIVATE_KEY" > "$HOME/sign_key"
+          chmod 600 "$HOME/sign_key"
+          git config --global commit.gpgsign true
+          git config --global gpg.format ssh
+          git config --global user.signingkey "$HOME/sign_key"
+
+      - uses: stefanzweifel/git-auto-commit-action@d0b01107b5db882071f96de5dd4b54961ea93f4c # v7.2.1
+        with:
+          commit_author: piggecutlet <234113501+piggecutlet@users.noreply.github.com>
+          commit_message: "update"
+          commit_user_email: 234113501+piggecutlet@users.noreply.github.com
+          commit_user_name: piggecutlet
